@@ -5,7 +5,7 @@ from Crypto import Random
 from ocoen.filesecrets import packer
 
 
-def encrypt(data, password):
+def encrypt(data, password, authenticated_data=None):
     kdf_alg = scrypt
     enc_alg = AES
 
@@ -27,12 +27,14 @@ def encrypt(data, password):
 
     key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
     cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
+    if authenticated_data:
+        cipher.update(authenticated_data)
     ciphertext, tag = cipher.encrypt_and_digest(data)
 
     return packer.pack(enc_info, ciphertext, tag)
 
 
-def decrypt(packed, password):
+def decrypt(packed, password, authenticated_data=None):
     enc_info, ciphertext, tag = packer.unpack(packed)
 
     kdf_alg = enc_info['kdf_alg']
@@ -40,4 +42,6 @@ def decrypt(packed, password):
 
     key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
     cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
+    if authenticated_data:
+        cipher.update(authenticated_data)
     return cipher.decrypt_and_verify(ciphertext, tag)

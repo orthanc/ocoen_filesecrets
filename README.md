@@ -60,6 +60,24 @@ and the password.
 Note that that both the raw data and the encrypted package are binary data so are expected / returned as `bytes`.
 If you want to encrypt string data you must covert it to bytes using `encode` as in the example above.
 
+Both the `encrypt` and `decrypt` methods can also be passed additional data that is included in the integrity check
+but not encrypted. This can be used to tie the encrypted payload to it's expected use (e.g. include the file name
+in the integrity check). Additional data is passed as a third parameter:
+
+    data = 'my super secret credentials'.encode('UTF-8')
+    additional_data = 'thefilename'.encode('UTF-8')
+
+    # encrypt including additional data in the integrity check
+    encrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+
+    # decrypt requires the same additional data to pass the integrity check
+    unencrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+
+    # Fails the integrity check since the additional data is not provided
+    filesecrets.encrypt(data, 'my password')
+
+As with the data, the additional data is binary so strings must be encoded before being passed to `encrypt` or `decrypt`.
+
 Design and Implementation Details
 =================================
 
