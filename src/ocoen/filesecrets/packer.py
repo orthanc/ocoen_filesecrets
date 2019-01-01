@@ -1,7 +1,8 @@
 from struct import Struct
 
 from Crypto import Cipher
-from Crypto.Protocol import KDF
+
+from ocoen.filesecrets import kdf
 
 VERSION_1 = b'\x01'
 
@@ -21,11 +22,6 @@ ENC_INFO_STRUCT = Struct('>BBB')
 # Options Length
 KDF_HEADER_STRUCT = Struct('>BBB')
 
-# key length
-# N
-# r
-# p
-SCRYPT_OPTIONS_STRUCT = Struct('>BLBB')
 
 # Algorithm Id
 # Nonce Length
@@ -91,10 +87,9 @@ def _unpack_enc_info(packed_enc_info):
 
 
 def _pack_kdf_header(alg, salt, options):
-    alg_id, option_packer = KDF_ALGS[alg]
-    packed_options = option_packer(options)
+    packed_options = alg.pack_options(options)
 
-    return (KDF_HEADER_STRUCT.pack(alg_id, len(salt), len(packed_options))
+    return (KDF_HEADER_STRUCT.pack(alg.id, len(salt), len(packed_options))
             + salt
             + packed_options
             )
@@ -105,25 +100,11 @@ def _unpack_kdf_header(packed_header):
     salt_start = KDF_HEADER_STRUCT.size
     options_start = salt_start + salt_size
 
-    alg, option_unpacker = KDF_ALGS_BY_ID[alg_id]
+    alg = kdf.by_id(alg_id)
     salt = packed_header[salt_start:salt_start + salt_size]
-    options = option_unpacker(packed_header[options_start:options_start + options_size])
+    options = alg.unpack_options(packed_header[options_start:options_start + options_size])
 
     return alg, salt, options
-
-
-def _pack_scrypt_options(options):
-    return SCRYPT_OPTIONS_STRUCT.pack(options['key_len'], options['N'], options['r'], options['p'])
-
-
-def _unpack_scrypt_options(packed_options):
-    key_len, N, r, p = SCRYPT_OPTIONS_STRUCT.unpack(packed_options[0:SCRYPT_OPTIONS_STRUCT.size])
-    return {
-        'key_len': key_len,
-        'N': N,
-        'r': r,
-        'p': p,
-    }
 
 
 def _pack_enc_header(alg, mode, nonce, options):
@@ -155,13 +136,6 @@ def _pack_aes_siv_options(options):
 def _unpack_aes_siv_options(packed_options):
     return {}
 
-
-KDF_ALGS = {
-    KDF.scrypt: (1, _pack_scrypt_options),
-}
-KDF_ALGS_BY_ID = {
-    1: (KDF.scrypt, _unpack_scrypt_options),
-}
 
 ENC_ALGS = {
     (Cipher.AES, Cipher.AES.MODE_SIV): (1, _pack_aes_siv_options),
