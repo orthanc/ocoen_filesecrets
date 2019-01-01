@@ -28,8 +28,9 @@ KDF_HEADER_STRUCT = Struct('>BBB')
 SCRYPT_OPTIONS_STRUCT = Struct('>BLBB')
 
 # Algorithm Id
+# Nonce Length
 # Options Length
-ENC_HEADER_STRUCT = Struct('>BB')
+ENC_HEADER_STRUCT = Struct('>BBB')
 
 # nonce size
 AES_SIV_OPTIONS_STRUCT = Struct('>B')
@@ -62,7 +63,7 @@ def unpack(packed):
 
 def _pack_enc_info(enc_info):
     packed_kdf_header = _pack_kdf_header(enc_info['kdf_alg'], enc_info['kdf_salt'], enc_info['kdf_options'])
-    packed_enc_header = _pack_enc_header(enc_info['enc_alg'], enc_info['enc_mode'], enc_info['enc_options'])
+    packed_enc_header = _pack_enc_header(enc_info['enc_alg'], enc_info['enc_mode'], enc_info['enc_nonce'], enc_info['enc_options'])
 
     return (ENC_INFO_STRUCT.pack(ENC_INFO_STRUCT.size, len(packed_kdf_header), len(packed_enc_header))
             + packed_kdf_header
@@ -76,7 +77,7 @@ def _unpack_enc_info(packed_enc_info):
     enc_header_start = kdf_header_start + kdf_header_size
 
     kdf_alg, kdf_salt, kdf_options = _unpack_kdf_header(packed_enc_info[kdf_header_start:kdf_header_start + kdf_header_size])
-    enc_alg, enc_mode, enc_options = _unpack_enc_header(packed_enc_info[enc_header_start:enc_header_start + enc_header_size])
+    enc_alg, enc_mode, enc_nonce, enc_options = _unpack_enc_header(packed_enc_info[enc_header_start:enc_header_start + enc_header_size])
 
     return {
         'kdf_alg': kdf_alg,
@@ -84,6 +85,7 @@ def _unpack_enc_info(packed_enc_info):
         'kdf_options': kdf_options,
         'enc_alg': enc_alg,
         'enc_mode': enc_mode,
+        'enc_nonce': enc_nonce,
         'enc_options': enc_options,
     }
 
@@ -124,38 +126,34 @@ def _unpack_scrypt_options(packed_options):
     }
 
 
-def _pack_enc_header(alg, mode, options):
+def _pack_enc_header(alg, mode, nonce, options):
     alg_id, option_packer = ENC_ALGS[(alg, mode)]
     packed_options = option_packer(options)
 
-    return (ENC_HEADER_STRUCT.pack(alg_id, len(packed_options))
+    return (ENC_HEADER_STRUCT.pack(alg_id, len(nonce), len(packed_options))
+            + nonce
             + packed_options
             )
 
 
 def _unpack_enc_header(packed_header):
-    alg_id, options_size = ENC_HEADER_STRUCT.unpack(packed_header[0:ENC_HEADER_STRUCT.size])
-    options_start = ENC_HEADER_STRUCT.size
+    alg_id, nonce_size, options_size = ENC_HEADER_STRUCT.unpack(packed_header[0:ENC_HEADER_STRUCT.size])
+    nonce_start = ENC_HEADER_STRUCT.size
+    options_start = nonce_start + nonce_size
 
     alg, mode, option_unpacker = ENC_ALGS_BY_ID[alg_id]
+    nonce = packed_header[nonce_start:nonce_start + nonce_size]
     options = option_unpacker(packed_header[options_start:options_start + options_size])
 
-    return alg, mode, options
+    return alg, mode, nonce, options
 
 
 def _pack_aes_siv_options(options):
-    nonce = options['nonce']
-    return (AES_SIV_OPTIONS_STRUCT.pack(len(nonce))
-            + nonce
-            )
+    return b''
 
 
 def _unpack_aes_siv_options(packed_options):
-    (nonce_size,) = AES_SIV_OPTIONS_STRUCT.unpack(packed_options[0:AES_SIV_OPTIONS_STRUCT.size])
-    nonce_start = AES_SIV_OPTIONS_STRUCT.size
-    return {
-        'nonce': packed_options[nonce_start:nonce_start + nonce_size],
-    }
+    return {}
 
 
 KDF_ALGS = {

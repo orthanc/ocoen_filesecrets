@@ -20,13 +20,12 @@ def encrypt(data, password, authenticated_data=None):
         },
         'enc_alg': enc_alg,
         'enc_mode': AES.MODE_SIV,
-        'enc_options': {
-            'nonce': Random.get_random_bytes(16),
-        },
+        'enc_nonce': Random.get_random_bytes(16),
+        'enc_options': {},
     }
 
     key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
+    cipher = enc_alg.new(key, enc_info['enc_mode'], nonce=enc_info['enc_nonce'], **enc_info['enc_options'])
     if authenticated_data:
         cipher.update(authenticated_data)
     ciphertext, tag = cipher.encrypt_and_digest(data)
@@ -41,7 +40,7 @@ def decrypt(packed, password, authenticated_data=None):
     enc_alg = enc_info['enc_alg']
 
     key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
+    cipher = enc_alg.new(key, enc_info['enc_mode'], nonce=enc_info['enc_nonce'], **enc_info['enc_options'])
     if authenticated_data:
         cipher.update(authenticated_data)
     return cipher.decrypt_and_verify(ciphertext, tag)

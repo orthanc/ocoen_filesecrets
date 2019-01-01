@@ -193,27 +193,29 @@ the options part. The start of the KDF Settings looks like:
 #### Encryption Settings Format
 
 The Encryption Settings consists of a header indicating what algorithm and mode were used as well as the size of the
-algorithm / mode specific options part. The start of the encryption settings looks like:
+two otheer parts, the IV/Nonce data and the algorithm / mode specific options part. The start of the encryption settings
+looks like:
 
-       0      1
-    +------+------+---
-    | ALG  | OPSZ |
-    +------+------+---
+       0      1      2
+    +------+------+------+---
+    | ALG  | IVSZ | OPSZ |
+    +------+------+------+---
 
       Byte |
     +------+------+-------------------------------------------------------------------------------------------------+
     |  0   | ALG  | Algorithm: indicates which encryption algorithm and mode was used to encrypt the data. see table|
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  1   | OPSZ | Options Size: The number of bytes after the salt used to store the algorithm specific options.  |
+    |  1   | IVSZ | IV / Nonce Size: The number of bytes after the header used to store the IV or Nonce.            |
+    +------+------+-------------------------------------------------------------------------------------------------+
+    |  2   | OPSZ | Options Size: The number of bytes after the IV used to store the algorithm specific options.    |
     +------+------+-------------------------------------------------------------------------------------------------+
 
 ##### Encryption Algorithms and Modes
 
     | Id | Algorithm | Mode | Options Format  |
-    +----+-----------+------+----------------------+
-    | 1  |    AES    | SIV  | Byte 0:   Nonce Size |
-    |    |           | SIV  | Byte 1-n: Nonce      |
-    +----+-----------+------+----------------------+
+    +----+-----------+------+-----------------+
+    | 1  |    AES    | SIV  | None            |
+    +----+-----------+------+-----------------+
 
 Encryption
 ----------
