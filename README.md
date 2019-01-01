@@ -165,12 +165,12 @@ the options part. The start of the KDF Settings looks like:
 
 ##### KDF Algorithms
 
-    | Id | Algorithm | Options Format  |
-    +----+-----------+-----------------+
-    |    |           | Byte 0: N Value |
-    | 1  |  scrypt   | Byte 1: r Value |
-    |    |           | Byte 0: p Value |
-    +----+-----------+-----------------+
+    | Id | Algorithm | Options Format                        |
+    +----+-----------+---------------------------------------+
+    |    |           | Byte 0-3: N Value (stored big-endian) |
+    | 1  |  scrypt   | Byte 1:   r Value                     |
+    |    |           | Byte 0:   p Value                     |
+    +----+-----------+---------------------------------------+
 
 #### Encryption Settings Format
 
