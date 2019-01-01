@@ -1,8 +1,7 @@
 from struct import Struct
 
-from Crypto.Cipher import AES
+from Crypto import Cipher
 from Crypto.Protocol import KDF
-from Crypto import Random
 
 VERSION_1 = b'\x01'
 
@@ -36,45 +35,7 @@ ENC_HEADER_STRUCT = Struct('>BB')
 AES_SIV_OPTIONS_STRUCT = Struct('>B')
 
 
-def encrypt(data, password):
-    kdf_alg = KDF.scrypt
-    enc_alg = AES
-
-    enc_info = {
-        'kdf_alg': kdf_alg,
-        'kdf_salt': Random.get_random_bytes(16),
-        'kdf_options': {
-            'key_len': 64,
-            'N': 131072,
-            'r': 8,
-            'p': 1,
-        },
-        'enc_alg': enc_alg,
-        'enc_mode': AES.MODE_SIV,
-        'enc_options': {
-            'nonce': Random.get_random_bytes(16),
-        },
-    }
-
-    key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
-    ciphertext, tag = cipher.encrypt_and_digest(data)
-
-    return _pack(enc_info, ciphertext, tag)
-
-
-def decrypt(packed, password):
-    enc_info, ciphertext, tag = _unpack(packed)
-
-    kdf_alg = enc_info['kdf_alg']
-    enc_alg = enc_info['enc_alg']
-
-    key = kdf_alg(password, enc_info['kdf_salt'], **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], **enc_info['enc_options'])
-    return cipher.decrypt_and_verify(ciphertext, tag)
-
-
-def _pack(enc_info, ciphertext, tag):
+def pack(enc_info, ciphertext, tag):
     packed_enc_info = _pack_enc_info(enc_info)
     return (VERSION_1
             + FILE_INDEX_STRUCT.pack(FILE_INDEX_STRUCT.size, len(packed_enc_info), len(ciphertext), len(tag))
@@ -84,7 +45,7 @@ def _pack(enc_info, ciphertext, tag):
             )
 
 
-def _unpack(packed):
+def unpack(packed):
     assert packed[0:1] == VERSION_1
 
     fixed_size, enc_info_size, ciphertext_size, tag_size = FILE_INDEX_STRUCT.unpack(packed[1:1 + FILE_INDEX_STRUCT.size])
@@ -205,8 +166,8 @@ KDF_ALGS_BY_ID = {
 }
 
 ENC_ALGS = {
-    (AES, AES.MODE_SIV): (1, _pack_aes_siv_options),
+    (Cipher.AES, Cipher.AES.MODE_SIV): (1, _pack_aes_siv_options),
 }
 ENC_ALGS_BY_ID = {
-    1: (AES, AES.MODE_SIV, _unpack_aes_siv_options),
+    1: (Cipher.AES, Cipher.AES.MODE_SIV, _unpack_aes_siv_options),
 }
