@@ -85,7 +85,7 @@ Encrypted Data Format
 ---------------------
 
 `ocoen.filesecrets.encrypt` creates a binary package containing the encrypted ciphertext, the AEAD tag and all the
-details of the algorithms and options used for encryption. While currently only AES SIV mode with scrypt KDF is
+details of the algorithms and options used for encryption. While currently only AES256 SIV mode with scrypt KDF is
 supported the idea is to ensure the package contains all the settings needed to decrypt the data to allow for
 future support of different algorithms.
 
@@ -214,7 +214,7 @@ looks like:
 
     | Id | Algorithm | Mode | Options Format  |
     +----+-----------+------+-----------------+
-    | 1  |    AES    | SIV  | None            |
+    | 1  |   AES256  | SIV  | None            |
     +----+-----------+------+-----------------+
 
 Encryption

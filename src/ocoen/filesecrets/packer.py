@@ -1,8 +1,6 @@
 from struct import Struct
 
-from Crypto import Cipher
-
-from ocoen.filesecrets import kdf
+from ocoen.filesecrets import cipher, kdf
 
 VERSION_1 = b'\x01'
 
@@ -59,7 +57,7 @@ def unpack(packed):
 
 def _pack_enc_info(enc_info):
     packed_kdf_header = _pack_kdf_header(enc_info['kdf_alg'], enc_info['kdf_salt'], enc_info['kdf_options'])
-    packed_enc_header = _pack_enc_header(enc_info['enc_alg'], enc_info['enc_mode'], enc_info['enc_nonce'], enc_info['enc_options'])
+    packed_enc_header = _pack_enc_header(enc_info['enc_alg'], enc_info['enc_nonce'], enc_info['enc_options'])
 
     return (ENC_INFO_STRUCT.pack(ENC_INFO_STRUCT.size, len(packed_kdf_header), len(packed_enc_header))
             + packed_kdf_header
@@ -73,14 +71,13 @@ def _unpack_enc_info(packed_enc_info):
     enc_header_start = kdf_header_start + kdf_header_size
 
     kdf_alg, kdf_salt, kdf_options = _unpack_kdf_header(packed_enc_info[kdf_header_start:kdf_header_start + kdf_header_size])
-    enc_alg, enc_mode, enc_nonce, enc_options = _unpack_enc_header(packed_enc_info[enc_header_start:enc_header_start + enc_header_size])
+    enc_alg, enc_nonce, enc_options = _unpack_enc_header(packed_enc_info[enc_header_start:enc_header_start + enc_header_size])
 
     return {
         'kdf_alg': kdf_alg,
         'kdf_salt': kdf_salt,
         'kdf_options': kdf_options,
         'enc_alg': enc_alg,
-        'enc_mode': enc_mode,
         'enc_nonce': enc_nonce,
         'enc_options': enc_options,
     }
@@ -107,11 +104,10 @@ def _unpack_kdf_header(packed_header):
     return alg, salt, options
 
 
-def _pack_enc_header(alg, mode, nonce, options):
-    alg_id, option_packer = ENC_ALGS[(alg, mode)]
-    packed_options = option_packer(options)
+def _pack_enc_header(alg, nonce, options):
+    packed_options = alg.pack_options(options)
 
-    return (ENC_HEADER_STRUCT.pack(alg_id, len(nonce), len(packed_options))
+    return (ENC_HEADER_STRUCT.pack(alg.id, len(nonce), len(packed_options))
             + nonce
             + packed_options
             )
@@ -122,24 +118,8 @@ def _unpack_enc_header(packed_header):
     nonce_start = ENC_HEADER_STRUCT.size
     options_start = nonce_start + nonce_size
 
-    alg, mode, option_unpacker = ENC_ALGS_BY_ID[alg_id]
+    alg = cipher.by_id(alg_id)
     nonce = packed_header[nonce_start:nonce_start + nonce_size]
-    options = option_unpacker(packed_header[options_start:options_start + options_size])
+    options = alg.unpack_options(packed_header[options_start:options_start + options_size])
 
-    return alg, mode, nonce, options
-
-
-def _pack_aes_siv_options(options):
-    return b''
-
-
-def _unpack_aes_siv_options(packed_options):
-    return {}
-
-
-ENC_ALGS = {
-    (Cipher.AES, Cipher.AES.MODE_SIV): (1, _pack_aes_siv_options),
-}
-ENC_ALGS_BY_ID = {
-    1: (Cipher.AES, Cipher.AES.MODE_SIV, _unpack_aes_siv_options),
-}
+    return alg, nonce, options

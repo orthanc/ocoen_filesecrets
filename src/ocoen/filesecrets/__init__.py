@@ -1,28 +1,23 @@
-from Crypto.Cipher import AES
 from Crypto import Random
 
-from ocoen.filesecrets import packer, kdf
+from ocoen.filesecrets import cipher, kdf, packer
 
 
 def encrypt(data, password, authenticated_data=None):
     kdf_alg = kdf.scrypt
-    enc_alg = AES
+    enc_alg = cipher.AES256_SIV
 
     enc_info = {
         'kdf_alg': kdf_alg,
         'kdf_salt': Random.get_random_bytes(kdf_alg.salt_length),
         'kdf_options': kdf_alg.default_options,
         'enc_alg': enc_alg,
-        'enc_mode': AES.MODE_SIV,
-        'enc_nonce': Random.get_random_bytes(16),
-        'enc_options': {},
+        'enc_nonce': Random.get_random_bytes(enc_alg.nonce_length),
+        'enc_options': enc_alg.default_options,
     }
 
-    key = kdf_alg.derive_key(password, enc_info['kdf_salt'], 64, **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], nonce=enc_info['enc_nonce'], **enc_info['enc_options'])
-    if authenticated_data:
-        cipher.update(authenticated_data)
-    ciphertext, tag = cipher.encrypt_and_digest(data)
+    key = kdf_alg.derive_key(password, enc_info['kdf_salt'], enc_alg.key_length, **enc_info['kdf_options'])
+    ciphertext, tag = enc_alg.encrypt_and_digest(data, authenticated_data, key, enc_info['enc_nonce'], **enc_info['enc_options'])
 
     return packer.pack(enc_info, ciphertext, tag)
 
@@ -33,8 +28,5 @@ def decrypt(packed, password, authenticated_data=None):
     kdf_alg = enc_info['kdf_alg']
     enc_alg = enc_info['enc_alg']
 
-    key = kdf_alg.derive_key(password, enc_info['kdf_salt'], 64, **enc_info['kdf_options'])
-    cipher = enc_alg.new(key, enc_info['enc_mode'], nonce=enc_info['enc_nonce'], **enc_info['enc_options'])
-    if authenticated_data:
-        cipher.update(authenticated_data)
-    return cipher.decrypt_and_verify(ciphertext, tag)
+    key = kdf_alg.derive_key(password, enc_info['kdf_salt'], enc_alg.key_length, **enc_info['kdf_options'])
+    return enc_alg.decrypt_and_verify(ciphertext, tag, authenticated_data, key, enc_info['enc_nonce'], **enc_info['enc_options'])
