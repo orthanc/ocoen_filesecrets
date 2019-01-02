@@ -108,6 +108,32 @@ respectively.
 Note: There is no equivalent `Decrypter` class. The `decrypt` method reads all it's options from the encrypted package, so
 payloads encrypted with customized settings are decrypted using the `decrypt` method as in the earlier examples.
 
+Command Line Usage
+------------------
+
+The module also include a command line utility for encrypting and decrypting file content.
+
+To encrypt use the `fs-encrypt` command:
+
+    $ fs-encrypt inputfile outputfile
+
+Either argument can be `-` to indicate that stdin / stdout should be used. Output file is optional and defaults
+to stdout.
+
+To decrypt use the `fs-decrypt` command:
+
+    $ fs-decrypt inputfile outputfile
+
+Again, either argument can be `-` to indicate that stdin / stdout should be used. Output file is optional and defaults
+to stdout.
+
+
+The `fs-rekey` command can be used to re-encrypt an encrypted file with a new password:
+
+    $ fs-rekey file
+
+Unlike the other two commands, this cannot use stdin / stdout as that doesn't make much sense.
+
 Design and Implementation Details
 =================================
 
