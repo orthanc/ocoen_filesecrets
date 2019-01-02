@@ -28,10 +28,10 @@ Any feedback on potential or actual security issues would be highly appreciated.
 
 See the [Encryption](#encryption) section for details on the algorithms and settings used in the current implementation.
 
-Of particular note, the current settings are not suitable if long term security of the encrypted data is required.
-The KDF settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended use of
-secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection against
-brute forcing of the password to provide safe long term security.
+Of particular note, the default settings are not suitable if long term security of the encrypted data is required.
+The KDF default settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended 
+se of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
+against brute forcing of the password to provide safe long term security.
 
 Usage and Examples
 ==================
@@ -77,6 +77,36 @@ in the integrity check). Additional data is passed as a third parameter:
     filesecrets.encrypt(data, 'my password')
 
 As with the data, the additional data is binary so strings must be encoded before being passed to `encrypt` or `decrypt`.
+
+Changing KDF and Encryption Options
+-----------------------------------
+
+It's possible to specify different options for the KDF and encryption algorithms by creating your own
+`ocoen.filesecrets.Encrypter` rather than just using the encrypt method. E.g.
+
+    from ocoen.filesecrets import Encrypter, cipher, kdf
+
+    data = 'my super secret credentials'.encode('UTF-8')
+
+    encrypter = Encrypter(
+                          kdf_alg=kdf.scrypt
+                          kdf_options={
+                              'N': 131072,
+                              'r': 8,
+                              'p': 1,
+                          },
+                          enc_alg=cipher.AES256_SIV,
+                          enc_options={}
+                         )
+    encrypted_data = encrypter.encrypt(data, 'my password')
+
+It's also theoretically possible to specify a different KDF algorithm or different encryption algorithm / mode.
+Theoretically because currently there is exactly 1 of each defined. New algorithms would have to be added to
+[ocoen.filesecrets.kdf](src/ocoen/filesecrets/kdf.py) and [ocoen.filesecrets.cipher](src/ocoen/filesecrets/cipher.py)
+respectively.
+
+Note: There is no equivalent `Decrypter` class. The `decrypt` method reads all it's options from the encrypted package, so
+payloads encrypted with customized settings are decrypted using the `decrypt` method as in the earlier examples.
 
 Design and Implementation Details
 =================================
