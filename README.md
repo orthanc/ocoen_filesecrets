@@ -141,6 +141,18 @@ The `fs-rekey` command can be used to re-encrypt an encrypted file with a new pa
 
 Unlike the other two commands, this cannot use stdin / stdout as that doesn't make much sense.
 
+
+All three commands can accept a `--additional-data` or `-d` option to specify additional data that should be covered by
+the integrity check. If a string is provided it will be UTF-8 encoded and used as the additional data. If the value
+starts with an @ it will be treated as a path and the contents of the file loaded and used as additional data. E.g.
+The following two blocks are equivalent and will include the string 'default' as the additional data:
+
+    $ fs-encrypt inputfile outputfile -d 'default'
+
+    $ echo -n default > tmp-file
+    $ fs-encrypt inputfile outputfile -d '@tmp-file'
+
+
 Design and Implementation Details
 =================================
 
