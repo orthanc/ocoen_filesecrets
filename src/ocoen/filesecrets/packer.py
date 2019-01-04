@@ -64,9 +64,7 @@ def get_format_version(packed):
 
 def _get_start_offset(packed):
     version = get_format_version(packed)
-    if version == 1:
-        return 1
-    elif version == 2:
+    if version == 2:
         return 4
     else:
         raise ValueError('Unknown Format')
