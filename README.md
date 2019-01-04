@@ -150,9 +150,9 @@ This is almost certainly overkill, but gotta keep it interesting.
 
 The format consist of 5 segments:
 
-* **Format Version** a single byte indicating which version of the format the package was create with
-  Currently there is only a single format so this must have the value 0x01.
-  This is to allow for breaking changes to the format in future,
+* **File Format Version** a 4 byte magic number indicating which version of the format the package was create with
+  This is used both to identify the format version, but also as a magic number to allow encrypted packages to
+  be idetified.
 * **Package Index** contains information on where in the package the other segments are.
 * **Encryption Info** contains the algorithms, modes, salts etc that the data was encrypted with,
 * **Ciphertext** the actual encrypted data.
@@ -161,26 +161,26 @@ The format consist of 5 segments:
 The package index segment describes the location of all of the other segments. As a result the start of the package
 currently looks like:
 
-       0      1      2      3      4      5
-    +------+------+------+------+------+------+---
-    | 0x01 | PISZ | EISZ |     CTSZ    | TGSZ |
-    +------+------+------+------+------+------+---
+       0      1      2      3      4      5      6      7      8
+    +------+------+------+------+------+------+------+------+------+---
+    | 0xf4 | 0x5f | 0xff | 0x73 | PISZ | EISZ |     CTSZ    | TGSZ |
+    +------+------+------+------+------+------+------+------+------+---
 
       Byte |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  0   |      | Format Version: Fixed Value of 0x01.                                                            |
+    | 0-3  |      | File Format Version: Magic number 0xf45fff73 indication the file format
     +------+------+-------------------------------------------------------------------------------------------------+
     |      |      | Package Index Size: The number of bytes used for the package index (including this one).        |
-    |  1   | PISZ | Curretly always 5. This is recorded so that we can maintain forwards compatability in future by |
+    |  4   | PISZ | Curretly always 5. This is recorded so that we can maintain forwards compatability in future by |
     |      |      | ignoring any additional index fields before the start of the encryption info.                   |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  2   | EISZ | Encryption Info Size: The number of bytes after the packaage index that are used to describe    |
+    |  5   | EISZ | Encryption Info Size: The number of bytes after the packaage index that are used to describe    |
     |      |      | the algorithms and parameters in use to encrypt the payload.                                    |
     +------+------+-------------------------------------------------------------------------------------------------+
-    | 3-4  | CTSZ | Cipertext Size: The number of bytes after the ecryption info that are used to store the         |
+    | 6-7  | CTSZ | Cipertext Size: The number of bytes after the ecryption info that are used to store the         |
     |      |      | cipertext. Like all multi-byte fields this is stored big endien.                                |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  5   | TGSZ | Tag Size: The  number of bytes after the ciphertext used to store the AEAD tag.                 |
+    |  8   | TGSZ | Tag Size: The  number of bytes after the ciphertext used to store the AEAD tag.                 |
     +------+------+-------------------------------------------------------------------------------------------------+
 
 ### Encryption Info Format
