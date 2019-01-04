@@ -45,3 +45,7 @@ def decrypt(packed, password, authenticated_data=None):
 
     key = kdf_alg.derive_key(password, enc_info['kdf_salt'], enc_alg.key_length, **enc_info['kdf_options'])
     return enc_alg.decrypt_and_verify(ciphertext, tag, authenticated_data, key, enc_info['enc_nonce'], **enc_info['enc_options'])
+
+
+def is_encrypted(data):
+    return packer.get_format_version(data) is not None

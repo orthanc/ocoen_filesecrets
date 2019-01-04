@@ -78,6 +78,13 @@ in the integrity check). Additional data is passed as a third parameter:
 
 As with the data, the additional data is binary so strings must be encoded before being passed to `encrypt` or `decrypt`.
 
+The `ocoen.filesecrets.is_encrypted` method can be used to determine if a given `bytes` is an encrypted package. E.g,:
+
+    data = ...
+    if ocoen.filesecrets.is_encrypted(data):
+        password = getpass.getpass()
+        data = ocoen.filesecrets.decrypt(data)
+
 Changing KDF and Encryption Options
 -----------------------------------
 
