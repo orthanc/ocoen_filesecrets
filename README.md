@@ -163,6 +163,19 @@ The following two blocks are equivalent and will include the string 'default' as
     $ fs-encrypt inputfile outputfile -d '@tmp-file'
 
 
+It's also possible to specify the password as a command line argument using `--password` and --password-file` argument.
+For rekey these provide the existng password and `--new-password` or --new-password-file` can be used with the same
+syntax to provide the new password. A filename of - indicates to read the password from stdin. E.g.
+
+    # Encrypt with the password 'mypassword'
+    $ fs-encrypt inputfile outputfile --password mypassword
+
+    # Decrypt with the contents of key-file as the password
+    $ fs-decrypt inputfile outputfile --password-file key-file
+
+    # Rekey using the existing password 'mypassword' and read the new password from stdin
+    $ fs-rekey file --password mypassword --new-password-file -
+
 Design and Implementation Details
 =================================
 
