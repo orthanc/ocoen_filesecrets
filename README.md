@@ -39,23 +39,27 @@ Usage and Examples
 To encrypt some sensitive data call the `ocoen.filesecrets.encrypt` method with the data and a password. This returns
 a `bytes` of the encrypted data, tag and options that can be written to a file. E.g.
 
-    from ocoen import filesecrets
+```python
+from ocoen import filesecrets
 
-    data = 'my super secret credentials'.encode('UTF-8')
-    encrypted_data = filesecrets.encrypt(data, 'my password')
+data = 'my super secret credentials'.encode('UTF-8')
+encrypted_data = filesecrets.encrypt(data, 'my password')
 
-    with open('encrypted_file', 'wb') as f:
-        f.write(encrypted_data)
+with open('encrypted_file', 'wb') as f:
+    f.write(encrypted_data)
+```
 
 Similarly, to decrypt previously encrypted data, use the `ocoen.filesecrets.decrypt` method with the encrypted data
 and the password.
 
-    from ocoen import filesecrets
+```python
+from ocoen import filesecrets
 
-    with open('encrypted_file', 'rb') as f:
-        encrypted_data = f.readall()
+with open('encrypted_file', 'rb') as f:
+    encrypted_data = f.readall()
 
-    data = filesecrets.decrypt(data, 'my password')
+data = filesecrets.decrypt(data, 'my password')
+```
 
 Note that that both the raw data and the encrypted package are binary data so are expected / returned as `bytes`.
 If you want to encrypt string data you must covert it to bytes using `encode` as in the example above.
@@ -64,26 +68,30 @@ Both the `encrypt` and `decrypt` methods can also be passed additional data that
 but not encrypted. This can be used to tie the encrypted payload to it's expected use (e.g. include the file name
 in the integrity check). Additional data is passed as a third parameter:
 
-    data = 'my super secret credentials'.encode('UTF-8')
-    additional_data = 'thefilename'.encode('UTF-8')
+```python
+data = 'my super secret credentials'.encode('UTF-8')
+additional_data = 'thefilename'.encode('UTF-8')
 
-    # encrypt including additional data in the integrity check
-    encrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+# encrypt including additional data in the integrity check
+encrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
 
-    # decrypt requires the same additional data to pass the integrity check
-    unencrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+# decrypt requires the same additional data to pass the integrity check
+unencrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
 
-    # Fails the integrity check since the additional data is not provided
-    filesecrets.encrypt(data, 'my password')
+# Fails the integrity check since the additional data is not provided
+filesecrets.encrypt(data, 'my password')
+```
 
 As with the data, the additional data is binary so strings must be encoded before being passed to `encrypt` or `decrypt`.
 
 The `ocoen.filesecrets.is_encrypted` method can be used to determine if a given `bytes` is an encrypted package. E.g,:
 
-    data = ...
-    if ocoen.filesecrets.is_encrypted(data):
-        password = getpass.getpass()
-        data = ocoen.filesecrets.decrypt(data)
+```python
+data = ...
+if ocoen.filesecrets.is_encrypted(data):
+    password = getpass.getpass()
+    data = ocoen.filesecrets.decrypt(data)
+```
 
 Changing KDF and Encryption Options
 -----------------------------------
@@ -91,21 +99,23 @@ Changing KDF and Encryption Options
 It's possible to specify different options for the KDF and encryption algorithms by creating your own
 `ocoen.filesecrets.Encrypter` rather than just using the encrypt method. E.g.
 
-    from ocoen.filesecrets import Encrypter, cipher, kdf
+```python
+from ocoen.filesecrets import Encrypter, cipher, kdf
 
-    data = 'my super secret credentials'.encode('UTF-8')
+data = 'my super secret credentials'.encode('UTF-8')
 
-    encrypter = Encrypter(
-                          kdf_alg=kdf.scrypt
-                          kdf_options={
-                              'N': 131072,
-                              'r': 8,
-                              'p': 1,
-                          },
-                          enc_alg=cipher.AES256_SIV,
-                          enc_options={}
-                         )
-    encrypted_data = encrypter.encrypt(data, 'my password')
+encrypter = Encrypter(
+                      kdf_alg=kdf.scrypt
+                      kdf_options={
+                          'N': 131072,
+                          'r': 8,
+                          'p': 1,
+                      },
+                      enc_alg=cipher.AES256_SIV,
+                      enc_options={}
+                      )
+encrypted_data = encrypter.encrypt(data, 'my password')
+```
 
 It's also theoretically possible to specify a different KDF algorithm or different encryption algorithm / mode.
 Theoretically because currently there is exactly 1 of each defined. New algorithms would have to be added to
