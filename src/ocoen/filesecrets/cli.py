@@ -8,7 +8,8 @@ from ocoen import filesecrets
 common_options = ArgumentParser(add_help=False)
 common_options.add_argument('--additional-data', '-d',
                             help='The additional data to include in the hash. Will be UTF-8 encoded. '
-                                 + 'If starts with an \'@\' will be treated as a file path.')
+                                 + 'If starts with an \'@\' will be treated as a file path. If starts '
+                                 + ' with \'@@\' will be treated as a literal string starting with \'@\'.')
 password_group = common_options.add_mutually_exclusive_group()
 password_group.add_argument('--password',
                             help='The password to use. If neither this or --password-file are specified '
@@ -93,6 +94,8 @@ def rekey():
 def _load_additional_data(additional_data_arg):
     if not additional_data_arg:
         return None
+    elif len(additional_data_arg) > 2 and additional_data_arg[0:2] == '@@':
+        return additional_data_arg[1:].encode('UTF-8')
     elif additional_data_arg[0] == '@':
         with open(additional_data_arg[1:], 'rb') as f:
             return f.read()
