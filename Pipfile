@@ -8,6 +8,7 @@ flake8 = "*"
 pytest = "*"
 
 [packages]
+setuptools = ">=30.3"
 ocoen-filesecrets = {path = ".",editable = true}
 
 [requires]

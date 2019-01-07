@@ -29,9 +29,38 @@ Any feedback on potential or actual security issues would be highly appreciated.
 See the [Encryption](#encryption) section for details on the algorithms and settings used in the current implementation.
 
 Of particular note, the default settings are not suitable if long term security of the encrypted data is required.
-The KDF default settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended 
-se of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
+The KDF default settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended
+use of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
 against brute forcing of the password to provide safe long term security.
+
+Installation
+============
+
+*Note: Python 3 is required*
+
+This module is not published to PyPI (comment on [issue 1](https://github.com/orthanc/ocoen_filesecrets/issues/1) if
+that would be useful to you), so it should be installed from this source repository using pip.
+
+[install-requirements.txt](install-requirements.txt) contains the necessary required modules so filesecrets can be
+installed with the following command:
+
+    $ pip install -r https://github.com/orthanc/ocoen_filesecrets/raw/master/install-requirements.txt
+
+
+If you want to isolate the install and it's dependencies from other python utilities I suggest using [pipenv](https://pipenv.readthedocs.io/en/latest/).
+First, install pipenv, then:
+
+Install filesecrets using pipenv:
+
+    $ mkdir filesecrets
+    $ cd filesecrets
+    $ PIPENV_VENV_IN_PROJECT=True PIPENV_SKIP_LOCK=True pipenv --three install -r https://github.com/orthanc/ocoen_filesecrets/raw/master/install-requirements.txt
+
+Alias the filesecrets commands in your ~/.profile:
+
+    alias fs-encrypt="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-encrypt"
+    alias fs-decrypt="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-decrypt"
+    alias fs-rekey="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-rekey"
 
 Usage and Examples
 ==================
@@ -39,23 +68,27 @@ Usage and Examples
 To encrypt some sensitive data call the `ocoen.filesecrets.encrypt` method with the data and a password. This returns
 a `bytes` of the encrypted data, tag and options that can be written to a file. E.g.
 
-    from ocoen import filesecrets
+```python
+from ocoen import filesecrets
 
-    data = 'my super secret credentials'.encode('UTF-8')
-    encrypted_data = filesecrets.encrypt(data, 'my password')
+data = 'my super secret credentials'.encode('UTF-8')
+encrypted_data = filesecrets.encrypt(data, 'my password')
 
-    with open('encrypted_file', 'wb') as f:
-        f.write(encrypted_data)
+with open('encrypted_file', 'wb') as f:
+    f.write(encrypted_data)
+```
 
 Similarly, to decrypt previously encrypted data, use the `ocoen.filesecrets.decrypt` method with the encrypted data
 and the password.
 
-    from ocoen import filesecrets
+```python
+from ocoen import filesecrets
 
-    with open('encrypted_file', 'rb') as f:
-        encrypted_data = f.readall()
+with open('encrypted_file', 'rb') as f:
+    encrypted_data = f.readall()
 
-    data = filesecrets.decrypt(data, 'my password')
+data = filesecrets.decrypt(data, 'my password')
+```
 
 Note that that both the raw data and the encrypted package are binary data so are expected / returned as `bytes`.
 If you want to encrypt string data you must covert it to bytes using `encode` as in the example above.
@@ -64,19 +97,30 @@ Both the `encrypt` and `decrypt` methods can also be passed additional data that
 but not encrypted. This can be used to tie the encrypted payload to it's expected use (e.g. include the file name
 in the integrity check). Additional data is passed as a third parameter:
 
-    data = 'my super secret credentials'.encode('UTF-8')
-    additional_data = 'thefilename'.encode('UTF-8')
+```python
+data = 'my super secret credentials'.encode('UTF-8')
+additional_data = 'thefilename'.encode('UTF-8')
 
-    # encrypt including additional data in the integrity check
-    encrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+# encrypt including additional data in the integrity check
+encrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
 
-    # decrypt requires the same additional data to pass the integrity check
-    unencrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
+# decrypt requires the same additional data to pass the integrity check
+unencrypted_data = filesecrets.encrypt(data, 'my password', additional_data)
 
-    # Fails the integrity check since the additional data is not provided
-    filesecrets.encrypt(data, 'my password')
+# Fails the integrity check since the additional data is not provided
+filesecrets.encrypt(data, 'my password')
+```
 
 As with the data, the additional data is binary so strings must be encoded before being passed to `encrypt` or `decrypt`.
+
+The `ocoen.filesecrets.is_encrypted` method can be used to determine if a given `bytes` is an encrypted package. E.g,:
+
+```python
+data = ...
+if ocoen.filesecrets.is_encrypted(data):
+    password = getpass.getpass()
+    data = ocoen.filesecrets.decrypt(data)
+```
 
 Changing KDF and Encryption Options
 -----------------------------------
@@ -84,21 +128,23 @@ Changing KDF and Encryption Options
 It's possible to specify different options for the KDF and encryption algorithms by creating your own
 `ocoen.filesecrets.Encrypter` rather than just using the encrypt method. E.g.
 
-    from ocoen.filesecrets import Encrypter, cipher, kdf
+```python
+from ocoen.filesecrets import Encrypter, cipher, kdf
 
-    data = 'my super secret credentials'.encode('UTF-8')
+data = 'my super secret credentials'.encode('UTF-8')
 
-    encrypter = Encrypter(
-                          kdf_alg=kdf.scrypt
-                          kdf_options={
-                              'N': 131072,
-                              'r': 8,
-                              'p': 1,
-                          },
-                          enc_alg=cipher.AES256_SIV,
-                          enc_options={}
-                         )
-    encrypted_data = encrypter.encrypt(data, 'my password')
+encrypter = Encrypter(
+                      kdf_alg=kdf.scrypt
+                      kdf_options={
+                          'N': 131072,
+                          'r': 8,
+                          'p': 1,
+                      },
+                      enc_alg=cipher.AES256_SIV,
+                      enc_options={}
+                      )
+encrypted_data = encrypter.encrypt(data, 'my password')
+```
 
 It's also theoretically possible to specify a different KDF algorithm or different encryption algorithm / mode.
 Theoretically because currently there is exactly 1 of each defined. New algorithms would have to be added to
@@ -134,6 +180,31 @@ The `fs-rekey` command can be used to re-encrypt an encrypted file with a new pa
 
 Unlike the other two commands, this cannot use stdin / stdout as that doesn't make much sense.
 
+
+All three commands can accept a `--additional-data` or `-d` option to specify additional data that should be covered by
+the integrity check. If a string is provided it will be UTF-8 encoded and used as the additional data. If the value
+starts with an @ it will be treated as a path and the contents of the file loaded and used as additional data. E.g.
+The following two blocks are equivalent and will include the string 'default' as the additional data:
+
+    $ fs-encrypt inputfile outputfile -d 'default'
+
+    $ echo -n default > tmp-file
+    $ fs-encrypt inputfile outputfile -d '@tmp-file'
+
+
+It's also possible to specify the password as a command line argument using `--password` and --password-file` argument.
+For rekey these provide the existng password and `--new-password` or --new-password-file` can be used with the same
+syntax to provide the new password. A filename of - indicates to read the password from stdin. E.g.
+
+    # Encrypt with the password 'mypassword'
+    $ fs-encrypt inputfile outputfile --password mypassword
+
+    # Decrypt with the contents of key-file as the password
+    $ fs-decrypt inputfile outputfile --password-file key-file
+
+    # Rekey using the existing password 'mypassword' and read the new password from stdin
+    $ fs-rekey file --password mypassword --new-password-file -
+
 Design and Implementation Details
 =================================
 
@@ -150,9 +221,9 @@ This is almost certainly overkill, but gotta keep it interesting.
 
 The format consist of 5 segments:
 
-* **Format Version** a single byte indicating which version of the format the package was create with
-  Currently there is only a single format so this must have the value 0x01.
-  This is to allow for breaking changes to the format in future,
+* **File Format Version** a 4 byte magic number indicating which version of the format the package was create with
+  This is used both to identify the format version, but also as a magic number to allow encrypted packages to
+  be idetified.
 * **Package Index** contains information on where in the package the other segments are.
 * **Encryption Info** contains the algorithms, modes, salts etc that the data was encrypted with,
 * **Ciphertext** the actual encrypted data.
@@ -161,26 +232,26 @@ The format consist of 5 segments:
 The package index segment describes the location of all of the other segments. As a result the start of the package
 currently looks like:
 
-       0      1      2      3      4      5
-    +------+------+------+------+------+------+---
-    | 0x01 | PISZ | EISZ |     CTSZ    | TGSZ |
-    +------+------+------+------+------+------+---
+       0      1      2      3      4      5      6      7      8
+    +------+------+------+------+------+------+------+------+------+---
+    | 0xf4 | 0x5f | 0xff | 0x73 | PISZ | EISZ |     CTSZ    | TGSZ |
+    +------+------+------+------+------+------+------+------+------+---
 
       Byte |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  0   |      | Format Version: Fixed Value of 0x01.                                                            |
+    | 0-3  |      | File Format Version: Magic number 0xf45fff73 indication the file format
     +------+------+-------------------------------------------------------------------------------------------------+
     |      |      | Package Index Size: The number of bytes used for the package index (including this one).        |
-    |  1   | PISZ | Curretly always 5. This is recorded so that we can maintain forwards compatability in future by |
+    |  4   | PISZ | Curretly always 5. This is recorded so that we can maintain forwards compatability in future by |
     |      |      | ignoring any additional index fields before the start of the encryption info.                   |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  2   | EISZ | Encryption Info Size: The number of bytes after the packaage index that are used to describe    |
+    |  5   | EISZ | Encryption Info Size: The number of bytes after the packaage index that are used to describe    |
     |      |      | the algorithms and parameters in use to encrypt the payload.                                    |
     +------+------+-------------------------------------------------------------------------------------------------+
-    | 3-4  | CTSZ | Cipertext Size: The number of bytes after the ecryption info that are used to store the         |
+    | 6-7  | CTSZ | Cipertext Size: The number of bytes after the ecryption info that are used to store the         |
     |      |      | cipertext. Like all multi-byte fields this is stored big endien.                                |
     +------+------+-------------------------------------------------------------------------------------------------+
-    |  5   | TGSZ | Tag Size: The  number of bytes after the ciphertext used to store the AEAD tag.                 |
+    |  8   | TGSZ | Tag Size: The  number of bytes after the ciphertext used to store the AEAD tag.                 |
     +------+------+-------------------------------------------------------------------------------------------------+
 
 ### Encryption Info Format

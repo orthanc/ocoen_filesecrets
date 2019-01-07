@@ -2,7 +2,7 @@ from struct import Struct
 
 from ocoen.filesecrets import cipher, kdf
 
-VERSION_1 = b'\x01'
+VERSION_2 = b'\xf4\x5f\xff\x73'
 
 # Fixed Block Size
 # Enc Info Size
@@ -32,7 +32,7 @@ AES_SIV_OPTIONS_STRUCT = Struct('>B')
 
 def pack(enc_info, ciphertext, tag):
     packed_enc_info = _pack_enc_info(enc_info)
-    return (VERSION_1
+    return (VERSION_2
             + FILE_INDEX_STRUCT.pack(FILE_INDEX_STRUCT.size, len(packed_enc_info), len(ciphertext), len(tag))
             + packed_enc_info
             + ciphertext
@@ -41,10 +41,10 @@ def pack(enc_info, ciphertext, tag):
 
 
 def unpack(packed):
-    assert packed[0:1] == VERSION_1
+    start = _get_start_offset(packed)
 
-    fixed_size, enc_info_size, ciphertext_size, tag_size = FILE_INDEX_STRUCT.unpack(packed[1:1 + FILE_INDEX_STRUCT.size])
-    enc_info_start = 1 + fixed_size
+    fixed_size, enc_info_size, ciphertext_size, tag_size = FILE_INDEX_STRUCT.unpack(packed[start:start + FILE_INDEX_STRUCT.size])
+    enc_info_start = start + fixed_size
     ciphertext_start = enc_info_start + enc_info_size
     tag_start = ciphertext_start + ciphertext_size
 
@@ -53,6 +53,21 @@ def unpack(packed):
     tag = packed[tag_start:tag_start + tag_size]
 
     return enc_info, ciphertext, tag
+
+
+def get_format_version(packed):
+    if packed[0:4] == VERSION_2:
+        return 2
+    else:
+        None
+
+
+def _get_start_offset(packed):
+    version = get_format_version(packed)
+    if version == 2:
+        return 4
+    else:
+        raise ValueError('Unknown Format')
 
 
 def _pack_enc_info(enc_info):
