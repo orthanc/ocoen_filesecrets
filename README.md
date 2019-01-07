@@ -29,8 +29,8 @@ Any feedback on potential or actual security issues would be highly appreciated.
 See the [Encryption](#encryption) section for details on the algorithms and settings used in the current implementation.
 
 Of particular note, the default settings are not suitable if long term security of the encrypted data is required.
-The KDF default settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended 
-se of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
+The KDF default settings have been picked so that decryption is relatively fast (~500ms) as that matches the intended
+use of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
 against brute forcing of the password to provide safe long term security.
 
 Installation
