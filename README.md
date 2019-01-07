@@ -33,6 +33,35 @@ The KDF default settings have been picked so that decryption is relatively fast 
 se of secure storage of credentials that are rotated regularly. This setting does not provide sufficient protection
 against brute forcing of the password to provide safe long term security.
 
+Installation
+============
+
+*Note: Python 3 is required*
+
+This module is not published to PyPI (comment on [issue 1](https://github.com/orthanc/ocoen_filesecrets/issues/1) if
+that would be useful to you), so it should be installed from this source repository using pip.
+
+[install-requirements.txt](install-requirements.txt) contains the necessary required modules so filesecrets can be
+installed with the following command:
+
+    $ pip install -r https://github.com/orthanc/ocoen_filesecrets/raw/master/install-requirements.txt
+
+
+If you want to isolate the install and it's dependencies from other python utilities I suggest using [pipenv](https://pipenv.readthedocs.io/en/latest/).
+First, install pipenv, then:
+
+Install filesecrets using pipenv:
+
+    $ mkdir filesecrets
+    $ cd filesecrets
+    $ PIPENV_VENV_IN_PROJECT=True PIPENV_SKIP_LOCK=True pipenv --three install -r https://github.com/orthanc/ocoen_filesecrets/raw/master/install-requirements.txt
+
+Alias the filesecrets commands in your ~/.profile:
+
+    alias fs-encrypt="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-encrypt"
+    alias fs-decrypt="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-decrypt"
+    alias fs-rekey="PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile pipenv run fs-rekey"
+
 Usage and Examples
 ==================
 
