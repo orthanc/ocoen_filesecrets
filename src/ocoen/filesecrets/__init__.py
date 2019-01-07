@@ -2,6 +2,8 @@ from Crypto import Random
 
 from ocoen.filesecrets import cipher, kdf, packer
 
+__version__ = '0.3.0'
+
 
 class Encrypter(object):
     def __init__(self, kdf_alg=kdf.scrypt, kdf_options=None, enc_alg=cipher.AES256_SIV, enc_options=None):
