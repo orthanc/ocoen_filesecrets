@@ -57,11 +57,9 @@ Install filesecrets using pipenv:
     $ wget https://raw.githubusercontent.com/orthanc/ocoen_filesecrets/master/install-requirements.txt
     $ PIPENV_VENV_IN_PROJECT=True PIPENV_SKIP_LOCK=True pipenv --three install -r install-requirements.txt
 
-Alias the filesecrets commands in your ~/.profile:
+Link the various `fs-*` commands into `~/.local/bin` so they're on the path:
 
-    alias fs-encrypt="PIPENV_VENV_IN_PROJECT=True PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile' pipenv run fs-encrypt"
-    alias fs-decrypt="PIPENV_VENV_IN_PROJECT=True PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile' pipenv run fs-decrypt"
-    alias fs-rekey="PIPENV_VENV_IN_PROJECT=True PIPENV_PIP_FILE='<LOCATION OF FILESECRETS>/Pipfile' pipenv run fs-rekey"
+    $ ln -s "${PWD}/.venv/bin/fs-"* ~/.local/bin/
 
 Usage and Examples
 ==================
